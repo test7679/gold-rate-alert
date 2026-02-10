@@ -12,7 +12,11 @@ IST = pytz.timezone("Asia/Kolkata")
 
 def send_alert(message: str):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message}
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
     r = requests.post(url, json=payload, timeout=20)
     r.raise_for_status()
 
@@ -35,22 +39,33 @@ def check_gold_rate():
             timeout=60000
         )
 
-        # Allow JS dropdown to load
-        page.wait_for_timeout(8000)
+        # Let JS load
+        page.wait_for_timeout(6000)
 
-        # ⬇️ Grab all dropdown items
+        # 🔽 CLICK DROPDOWN (CRITICAL FIX)
+        page.click("#inp_impact")
+
+        # Wait for dropdown items to appear
+        page.wait_for_selector("#dropdown-menu li a", timeout=10000)
+
         rate_elements = page.locator("#dropdown-menu li a")
         count = rate_elements.count()
 
         rates = []
-
         for i in range(count):
-            text = rate_elements.nth(i).inner_text().strip()
-            rates.append(text)
+            rates.append(rate_elements.nth(i).inner_text().strip())
 
         browser.close()
 
     now_ist = datetime.now(IST).strftime("%d-%m-%Y %I:%M %p")
+
+    if not rates:
+        send_alert(
+            "⚠️ *KHZANA METAL RATES*\n\n"
+            "Could not read rates (dropdown empty)\n"
+            f"🕰 Time (IST): {now_ist}"
+        )
+        return
 
     message = (
         "💰 *KHZANA METAL RATES*\n\n"
@@ -66,5 +81,5 @@ if __name__ == "__main__":
     try:
         check_gold_rate()
     except Exception as e:
-        send_alert(f"❌ GOLD BOT ERROR:\n{str(e)}")
+        send_alert(f"❌ *GOLD BOT ERROR*\n\n{str(e)}")
         raise
