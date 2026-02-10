@@ -2,7 +2,7 @@ name: Gold Rate Monitor
 
 on:
   schedule:
-    - cron: "0 * * * *"   # Every 1 hour (UTC → works for IST)
+    - cron: "* * * * *"   # Every 1 hour (UTC → works for IST)
   workflow_dispatch:
 
 jobs:
