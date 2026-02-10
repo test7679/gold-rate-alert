@@ -1,5 +1,4 @@
 import os
-import json
 import requests
 from playwright.sync_api import sync_playwright
 from datetime import datetime
@@ -8,7 +7,6 @@ import pytz
 BOT_TOKEN = os.environ["GOLD_BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 
-RATE_FILE = "last_gold_rate.json"
 IST = pytz.timezone("Asia/Kolkata")
 
 
@@ -19,22 +17,17 @@ def send_alert(message: str):
     r.raise_for_status()
 
 
-def get_last_rate():
-    if os.path.exists(RATE_FILE):
-        with open(RATE_FILE, "r") as f:
-            return json.load(f).get("rate")
-    return None
-
-
-def save_rate(rate):
-    with open(RATE_FILE, "w") as f:
-        json.dump({"rate": rate}, f)
-
-
 def check_gold_rate():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
 
         page.goto(
             "https://www.khazanajewellery.com/",
@@ -42,28 +35,21 @@ def check_gold_rate():
             timeout=60000
         )
 
+        page.wait_for_timeout(8000)
 
-        page.wait_for_timeout(5000)
-
-        # ⚠️ Selector may change – adjust if needed
         rate_text = page.locator("text=₹").first.inner_text()
         rate = rate_text.strip()
 
         browser.close()
 
-    last_rate = get_last_rate()
     now_ist = datetime.now(IST).strftime("%d-%m-%Y %I:%M %p")
 
-    if last_rate != rate:
-        save_rate(rate)
-        send_alert(
-            f"💰 GOLD RATE UPDATED\n\n"
-            f"New Rate: {rate}\n"
-            f"Time (IST): {now_ist}\n\n"
-            f"https://www.khazanajewellery.com/"
-        )
-    else:
-        print("No change in gold rate")
+    send_alert(
+        f"💰 GOLD RATE UPDATE\n\n"
+        f"Rate: {rate}\n"
+        f"Time (IST): {now_ist}\n\n"
+        f"https://www.khazanajewellery.com/"
+    )
 
 
 if __name__ == "__main__":
