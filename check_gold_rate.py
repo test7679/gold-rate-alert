@@ -35,21 +35,31 @@ def check_gold_rate():
             timeout=60000
         )
 
+        # Allow JS dropdown to load
         page.wait_for_timeout(8000)
 
-        rate_text = page.locator("text=₹").first.inner_text()
-        rate = rate_text.strip()
+        # ⬇️ Grab all dropdown items
+        rate_elements = page.locator("#dropdown-menu li a")
+        count = rate_elements.count()
+
+        rates = []
+
+        for i in range(count):
+            text = rate_elements.nth(i).inner_text().strip()
+            rates.append(text)
 
         browser.close()
 
     now_ist = datetime.now(IST).strftime("%d-%m-%Y %I:%M %p")
 
-    send_alert(
-        f"💰 GOLD RATE UPDATE\n\n"
-        f"Rate: {rate}\n"
-        f"Time (IST): {now_ist}\n\n"
-        f"https://www.khazanajewellery.com/"
+    message = (
+        "💰 *KHZANA METAL RATES*\n\n"
+        + "\n".join(f"• {rate}" for rate in rates)
+        + f"\n\n🕰 Time (IST): {now_ist}\n"
+        + "🔗 https://www.khazanajewellery.com/"
     )
+
+    send_alert(message)
 
 
 if __name__ == "__main__":
