@@ -38,9 +38,10 @@ def check_gold_rate():
 
         page.goto(
             "https://www.khazanajewellery.com/",
-            wait_until="networkidle",
-            timeout=90000
+            wait_until="domcontentloaded",
+            timeout=60000
         )
+
 
         page.wait_for_timeout(5000)
 
