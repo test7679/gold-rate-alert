@@ -1,65 +1,73 @@
 import os
+import json
 import requests
 from playwright.sync_api import sync_playwright
+from datetime import datetime
+import pytz
 
-GOLD_BOT_TOKEN = os.environ["GOLD_BOT_TOKEN"]
+BOT_TOKEN = os.environ["GOLD_BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 
-RATE_FILE = "last_rate.txt"
-KHAZANA_URL = "https://www.khazanajewellery.com/"
+RATE_FILE = "last_gold_rate.json"
+IST = pytz.timezone("Asia/Kolkata")
 
 
 def send_alert(message: str):
-    url = f"https://api.telegram.org/bot{GOLD_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message}
     r = requests.post(url, json=payload, timeout=20)
     r.raise_for_status()
 
 
-def read_last_rate():
-    if not os.path.exists(RATE_FILE):
-        return None
-    with open(RATE_FILE, "r") as f:
-        return f.read().strip()
+def get_last_rate():
+    if os.path.exists(RATE_FILE):
+        with open(RATE_FILE, "r") as f:
+            return json.load(f).get("rate")
+    return None
 
 
-def write_last_rate(rate: str):
+def save_rate(rate):
     with open(RATE_FILE, "w") as f:
-        f.write(rate)
+        json.dump({"rate": rate}, f)
 
 
-def get_current_gold_rate():
+def check_gold_rate():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        page.goto(KHAZANA_URL, wait_until="networkidle", timeout=60000)
+        page.goto(
+            "https://www.khazanajewellery.com/",
+            wait_until="networkidle",
+            timeout=90000
+        )
+
         page.wait_for_timeout(5000)
 
-        # ⚠️ Selector may change — verified common pattern
-        rate_text = page.locator("text=/Gold Rate/i").first.inner_text()
+        # ⚠️ Selector may change – adjust if needed
+        rate_text = page.locator("text=₹").first.inner_text()
+        rate = rate_text.strip()
 
         browser.close()
-        return rate_text.strip()
 
+    last_rate = get_last_rate()
+    now_ist = datetime.now(IST).strftime("%d-%m-%Y %I:%M %p")
 
-def check_gold_rate():
-    current_rate = get_current_gold_rate()
-    last_rate = read_last_rate()
-
-    print("Last rate:", last_rate)
-    print("Current rate:", current_rate)
-
-    if last_rate != current_rate:
+    if last_rate != rate:
+        save_rate(rate)
         send_alert(
-            "💰 Khazana Gold Rate Updated!\n\n"
-            f"New Rate:\n{current_rate}\n\n"
-            f"Website:\n{KHAZANA_URL}"
+            f"💰 GOLD RATE UPDATED\n\n"
+            f"New Rate: {rate}\n"
+            f"Time (IST): {now_ist}\n\n"
+            f"https://www.khazanajewellery.com/"
         )
-        write_last_rate(current_rate)
     else:
-        print("Gold rate unchanged")
+        print("No change in gold rate")
 
 
 if __name__ == "__main__":
-    check_gold_rate()
+    try:
+        check_gold_rate()
+    except Exception as e:
+        send_alert(f"❌ GOLD BOT ERROR:\n{str(e)}")
+        raise
