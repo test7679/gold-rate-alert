@@ -2,6 +2,10 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 def send_telegram_message(message):
     """Send a message to Telegram"""
@@ -9,6 +13,7 @@ def send_telegram_message(message):
     chat_id = os.environ.get('CHAT_ID')
     
     if not bot_token or not chat_id:
+        print("Error: GOLD_BOT_TOKEN or CHAT_ID not set in environment variables")
         return False
     
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -19,20 +24,23 @@ def send_telegram_message(message):
     }
     
     try:
-        response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=10)
         response.raise_for_status()
+        print("Message sent successfully to Telegram")
         return True
-    except:
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send Telegram message: {e}")
         return False
 
 def check_gold_rate():
-    """Scrape gold rate and send to Telegram - Silent on errors"""
+    """Scrape gold rate and send to Telegram"""
     
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
         
+        print("Fetching gold rates from Khazana Jewellery...")
         response = requests.get('https://www.khazanajewellery.com/', 
                                headers=headers, 
                                timeout=30)
@@ -89,10 +97,12 @@ def check_gold_rate():
             message += "\n📅 <i>Source: Khazana Jewellery</i>"
             
             send_telegram_message(message)
+            print(f"Found rates: {rates_found}")
+        else:
+            print("No gold rates found on the website")
     
-    except:
-        # Silently fail - no error messages sent
-        pass
+    except Exception as e:
+        print(f"Error checking gold rate: {e}")
 
 if __name__ == "__main__":
     check_gold_rate()
