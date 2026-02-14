@@ -1,30 +1,31 @@
-name: Gold Rate Monitor
+name: Gold Rate Alert
 
 on:
   schedule:
-    - cron: "* * * * *"   # Every 1 hour (UTC → works for IST)
-  workflow_dispatch:
+    # Runs every day at 9:00 AM IST (3:30 AM UTC)
+    - cron: '30 3 * * *'
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
-  gold-rate:
+  check-gold-rate:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
-
+          python-version: '3.10'
+      
       - name: Install dependencies
         run: |
-          pip install playwright requests pytz
-          playwright install chromium
-
-      - name: Run gold rate checker
+          pip install -r requirements.txt
+      
+      - name: Check gold rate
         env:
           GOLD_BOT_TOKEN: ${{ secrets.GOLD_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python check_gold_rate.py
+        run: |
+          python check_gold_rate.py
