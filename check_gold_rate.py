@@ -40,15 +40,12 @@ def check_gold_rate():
             # Navigate to the website
             print("Navigating to Khazana Jewellery website...")
             page.goto("https://www.khazanajewellery.com/", wait_until="domcontentloaded", timeout=60000)
-            
-            # Take a screenshot for debugging (optional)
-            page.screenshot(path="before_click.png")
-            print("Screenshot saved: before_click.png")
+
             
             # FIXED: Click on the "Today's Rate" element to open the dropdown
             # Wait for the clickable element first
             print("Waiting for 'Today's Rate' element...")
-            rate_button = page.wait_for_selector("text=Today's Rate", timeout=10000)
+            rate_button = page.wait_for_selector("a.dropdown-toggle", timeout=10000)
             
             # Click to open the dropdown
             print("Clicking on 'Today's Rate' to open dropdown...")
