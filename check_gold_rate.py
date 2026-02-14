@@ -53,11 +53,7 @@ def check_gold_rate():
             
             # Now wait for the dropdown menu to appear
             print("Waiting for dropdown menu...")
-            page.wait_for_selector("#dropdown-menu", timeout=10000)
-            
-            # Take another screenshot after dropdown appears
-            page.screenshot(path="after_click.png")
-            print("Screenshot saved: after_click.png")
+            page.wait_for_selector("#dropdown-menu li a", timeout=10000)
             
             # Extract all gold rates from the dropdown
             dropdown_items = page.query_selector_all("#dropdown-menu .dropdown-item")
