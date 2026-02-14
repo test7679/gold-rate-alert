@@ -39,7 +39,7 @@ def check_gold_rate():
         try:
             # Navigate to the website
             print("Navigating to Khazana Jewellery website...")
-            page.goto("https://www.khazanajewellery.com/", wait_until="networkidle")
+            page.goto("https://www.khazanajewellery.com/", wait_until="domcontentloaded", timeout=60000)
             
             # Take a screenshot for debugging (optional)
             page.screenshot(path="before_click.png")
