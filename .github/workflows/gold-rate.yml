@@ -4,25 +4,26 @@ on:
   schedule:
     # Runs every day at 9:00 AM IST (3:30 AM UTC)
     - cron: '30 3 * * *'
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   check-gold-rate:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-      
+          playwright install chromium
+
       - name: Check gold rate
         env:
           GOLD_BOT_TOKEN: ${{ secrets.GOLD_BOT_TOKEN }}
